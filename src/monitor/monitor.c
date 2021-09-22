@@ -28,7 +28,7 @@ void startMonitor(const struct ExecveConfig* const config, struct ExecveResult* 
     if(0 != getuid()){
         // printf("fail ai root user\n");
         //需要root权限对提交程序进行资源限制
-        result->condition = UNABLE_TO_MONOITOR;
+        result->condition = UNABLE_TO_SET_UID;
         return ;
     }
     
@@ -53,8 +53,8 @@ void startMonitor(const struct ExecveConfig* const config, struct ExecveResult* 
         realTimeKillerConfig.realTimeLimit = config->realTimeLimit;
         const int ret = pthread_create(&killerThreadId, NULL, realTimeKiller,(void*) &realTimeKillerConfig);
         if(0 != ret){
-            // printf("fail at time killer\n");
-            result->condition = UNABLE_TO_MONOITOR;
+            printf("fail at time killer\n");
+            result->condition = UNABLE_TO_LIMIT_REAL_TIME;
             kill(childPid, SIGKILL);
             return;
         }
@@ -105,13 +105,7 @@ enum RUNNING_CONDITION setRunningCondition(
             }
             return SUCCESS;
         }
-        if(UNABLE_TO_GET_INPUT == WEXITSTATUS(status))
-            return UNABLE_TO_GET_INPUT;
-        if(UNABLE_TO_MAKE_OUTPUT == WEXITSTATUS(status))
-            return UNABLE_TO_MAKE_OUTPUT;
-        if(UNABLE_TO_MONOITOR == WEXITSTATUS(status))
-            return UNABLE_TO_MONOITOR;
-        return UNKNOWN_ERROR;
+        return WEXITSTATUS(status);
     }
 
     // 异常终止

@@ -19,7 +19,7 @@ void startExecutant(const struct ExecveConfig const* config){
     if (config->userId != USER_ID_DEFAULT) {
         if (setuid(config->userId) == -1) {
             // printf("fail at setuid\n");
-            _exit(UNABLE_TO_MONOITOR);
+            _exit(UNABLE_TO_SET_UID);
         }
     }
     // printf("uid success\n");
@@ -59,19 +59,19 @@ void setResourceLimitation(const struct ExecveConfig* const config){
     limit.rlim_cur = config->memoryLimit * 1024;
     limit.rlim_max = config->wallMemoryLimit * 1024;
     if(0 != setrlimit(RLIMIT_AS, &limit))
-        _exit(UNABLE_TO_MONOITOR);
+        _exit(UNABLE_TO_LIMIT_MEM);
     //限制CPU时间（毫秒->秒）
     limit.rlim_cur = limit.rlim_max = config->cpuTimeLimit/1000 + 1;
     if(0 != setrlimit(RLIMIT_CPU, &limit))
-        _exit(UNABLE_TO_MONOITOR);
+        _exit(UNABLE_TO_LIMIT_CPU_TIME);
     //限制输出规模
     limit.rlim_cur = limit.rlim_max = config->outputSizeLimit;
     if(0 != setrlimit(RLIMIT_FSIZE, &limit))
-        _exit(UNABLE_TO_MONOITOR);
+        _exit(UNABLE_TO_LIMIT_OUTPUT);
     // 堆栈
     limit.rlim_cur = limit.rlim_max = RLIM_INFINITY;
     if (setrlimit(RLIMIT_STACK, &limit) != 0)
-        _exit(UNABLE_TO_MONOITOR);
+        _exit(UNABLE_TO_LIMIT_STACK);
 }
 
 inline void forbidSyscall(const struct ExecveConfig* const config){
@@ -87,21 +87,21 @@ inline void forbidSyscall(const struct ExecveConfig* const config){
     ctx = seccomp_init(SCMP_ACT_ALLOW);
     if(NULL == ctx){
         // printf("fail at init\n");
-        _exit(UNABLE_TO_MONOITOR);
+        _exit(UNABLE_TO_SECCOMP);
     }
     //添加禁止规则
     const size_t len = sizeof FORBIDDEN_LIST/sizeof(int);
     for(size_t i=0;i<len;i++)
         if(0 != seccomp_rule_add(ctx, SCMP_ACT_KILL, FORBIDDEN_LIST[i], 0)){
             // printf("fail at rule add\n");
-            _exit(UNABLE_TO_MONOITOR);
+            _exit(UNABLE_TO_SECCOMP);
         }
     
     //仅允许此进程execve提交程序
     const int ret = seccomp_rule_add(ctx, SCMP_ACT_KILL, SCMP_SYS(execve), 1, SCMP_A0(SCMP_CMP_NE, (scmp_datum_t)(config->execvePath)));
     if(0 > ret){
         // printf("fail at exec add\n");
-        _exit(UNABLE_TO_MONOITOR);
+        _exit(UNABLE_TO_SECCOMP);
     }
     seccomp_load(ctx);
 }
