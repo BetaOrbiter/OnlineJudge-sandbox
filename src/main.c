@@ -84,17 +84,7 @@ bool checkConfig(const struct ExecveConfig *const config){
 }
 inline void printResult(const struct ExecveResult *const result) {
     // 此处的stdout将被调用者处理 应该以json字符串形式表示
-    printf("{\n"
-           "    \"realTimeCost\": %llu,\n"
-           "    \"cpuTimeCost\": %llu,\n"
-           "    \"memoryCost\": %llu,\n"
-           "    \"condition\": %d,\n"
-           "}\n",
-           result->realTimeCost,
-           result->cpuTimeCost,
-           result->memoryCost,
-           result->condition
-    );
+    printf("%d %d %d", result->cpuTimeCost, result->memoryCost, result->condition);
 }
 
 inline void showUsage(void){
